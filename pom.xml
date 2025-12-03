@@ -1,58 +1,62 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-  <groupId>koddas.web.war</groupId>
-  <artifactId>wwp</artifactId>
-  <version>1.0.0</version>
-  <packaging>war</packaging>
-  <name>WAR Web Project</name>
-  <description>A very simple Maven-enabled WAR web project</description>
+    <modelVersion>4.0.0</modelVersion>
 
-  <dependencies>
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>2.3.1</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.ws.rs</groupId>
-      <artifactId>javax.ws.rs-api</artifactId>
-      <version>2.0.1</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
+    <groupId>koddas.web.war</groupId>
+    <artifactId>wwp</artifactId>
+    <version>1.0.0</version>
+    <packaging>war</packaging>
 
-  <build>
-    <plugins>
-      <!-- Updated maven-compiler-plugin to use Java 17 -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
-        <configuration>
-          <source>17</source>
-          <target>17</target>
-        </configuration>
-      </plugin>
+    <name>WAR Web Project</name>
+    <description>A simple Maven-enabled WAR web project</description>
 
-      <!-- Updated maven-war-plugin to a newer version -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>3.3.2</version> <!-- Use the latest version -->
-        <configuration>
-          <!-- Optional: Specify the webapp directory -->
-          <webappDirectory>target/wwp</webappDirectory>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+    <dependencies>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.0.1</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+
+            <!-- Java 17 support -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>17</source>
+                    <target>17</target>
+                </configuration>
+            </plugin>
+
+            <!-- WAR plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.3.2</version>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <!-- Correct Nexus repository -->
+    <distributionManagement>
+        <repository>
+            <id>nexus</id>
+            <url>http://98.92.117.32:8081/repository/maven-releases1/</url>
+        </repository>
+    </distributionManagement>
+
 </project>
-
-<distributionManagement>
-  <repository>
-    <id>nexus</id>
-    <url>http://http://13.222.103.35:8081//repository/maven-releases1/</url>
-  </repository>
-</distributionManagement>
-
