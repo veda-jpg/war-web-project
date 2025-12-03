@@ -88,16 +88,40 @@ pipeline {
                 script {
                     def warFile = sh(script: 'ls target/*.war | head -1', returnStdout: true).trim()
 
-                    sh """
-                    # Send the WAR to EC2
-                    scp -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${warFile} ${TOMCAT_USER}@${TOMCAT_SERVER}:/tmp/app.war
+                    try {
+                        // Backup existing WAR inside container
+                        sh """
+                        ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${TOMCAT_USER}@${TOMCAT_SERVER} '
+                            if [ -f /usr/local/tomcat/webapps/wwp.war ]; then
+                                mv /usr/local/tomcat/webapps/wwp.war /usr/local/tomcat/webapps/wwp.war.bak
+                            fi
+                        '
+                        """
 
-                    # Deploy inside Docker Tomcat container
-                    ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${TOMCAT_USER}@${TOMCAT_SERVER} '
-                        docker cp /tmp/app.war ${TOMCAT_CONTAINER}:/usr/local/tomcat/webapps/ &&
-                        docker restart ${TOMCAT_CONTAINER}
-                    '
-                    """
+                        // Copy new WAR to EC2
+                        sh "scp -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${warFile} ${TOMCAT_USER}@${TOMCAT_SERVER}:/tmp/app.war"
+
+                        // Deploy WAR inside Docker and restart container
+                        sh """
+                        ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${TOMCAT_USER}@${TOMCAT_SERVER} '
+                            docker cp /tmp/app.war ${TOMCAT_CONTAINER}:/usr/local/tomcat/webapps/wwp.war &&
+                            docker restart ${TOMCAT_CONTAINER}
+                        '
+                        """
+                        echo "✅ Deployment successful!"
+                    } catch (Exception e) {
+                        echo "❌ Deployment failed, rolling back..."
+                        // Rollback: restore previous WAR
+                        sh """
+                        ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${TOMCAT_USER}@${TOMCAT_SERVER} '
+                            if [ -f /usr/local/tomcat/webapps/wwp.war.bak ]; then
+                                mv /usr/local/tomcat/webapps/wwp.war.bak /usr/local/tomcat/webapps/wwp.war &&
+                                docker restart ${TOMCAT_CONTAINER}
+                            fi
+                        '
+                        """
+                        error("Deployment failed and rollback completed.")
+                    }
                 }
             }
         }
