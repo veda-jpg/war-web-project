@@ -27,15 +27,18 @@ jobs:
     - name: Build with Maven
       run: mvn clean package
 
-    # 🔎 Debug step (IMPORTANT)
-    - name: Verify JAR file exists
-      run: ls -l target/
+    # 🔎 Debug what Maven produced
+    - name: Show Generated Files
+      run: |
+        echo "===== TARGET FOLDER ====="
+        ls -R target || echo "No target folder"
 
-    - name: Upload JAR Artifact
+    # ✅ Upload whatever is generated (jar/war/etc)
+    - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: app-jar
-        path: target/*.jar
+        name: app-build
+        path: target/**
         if-no-files-found: error
 
   docker:
@@ -46,14 +49,14 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Download JAR Artifact
+    - name: Download Build Artifact
       uses: actions/download-artifact@v4
       with:
-        name: app-jar
+        name: app-build
         path: target/
 
-    - name: Verify Downloaded File
-      run: ls -l target/
+    - name: Verify Downloaded Files
+      run: ls -R target
 
     - name: Login to DockerHub
       uses: docker/login-action@v3
@@ -63,7 +66,10 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+        FILE=$(find target -type f \( -name "*.jar" -o -name "*.war" \) | head -n 1)
+        echo "Using file: $FILE"
+        docker build --build-arg APP_FILE=$FILE \
+          -t ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
 
     - name: Push Docker Image
       run: |
