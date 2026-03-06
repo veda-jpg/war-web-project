@@ -1,0 +1,74 @@
+name: CI/CD to EC2
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  IMAGE_NAME: java-maven-app
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+
+    - name: Build Maven App
+      run: mvn clean package
+
+    - name: Find Artifact
+      run: |
+        FILE=$(find . -type f \( -name "*.jar" -o -name "*.war" \) | head -n 1)
+        echo "APP_FILE=$FILE" >> $GITHUB_ENV
+
+    - name: Login DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build Docker Image
+      run: |
+        docker build --build-arg APP_FILE=${{ env.APP_FILE }} \
+        -t ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest .
+
+    - name: Push Docker Image
+      run: |
+        docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+
+
+  deploy:
+
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+
+          docker stop java-app || true
+          docker rm java-app || true
+
+          docker pull ${{ secrets.DOCKER_USERNAME }}/java-maven-app:latest
+
+          docker run -d -p 8080:8080 \
+          --name java-app \
+          ${{ secrets.DOCKER_USERNAME }}/java-maven-app:latest
