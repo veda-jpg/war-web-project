@@ -1,17 +1,17 @@
-# Use lightweight Java runtime
-FROM eclipse-temurin:17-jre-alpine
+# Use Tomcat with Java 17
+FROM tomcat:9.0-jdk17-temurin
 
 # Accept build argument from GitHub Actions
 ARG APP_FILE
 
-# Set working directory
-WORKDIR /app
+# Remove default Tomcat apps (optional but recommended)
+RUN rm -rf /usr/local/tomcat/webapps/*
 
-# Copy the jar/war file dynamically
-COPY ${APP_FILE} app.jar
+# Copy WAR file to Tomcat webapps directory
+COPY ${APP_FILE} /usr/local/tomcat/webapps/ROOT.war
 
-# Expose app port
+# Expose Tomcat port
 EXPOSE 8080
 
-# Run application
-ENTRYPOINT ["java","-jar","app.jar"]
+# Start Tomcat
+CMD ["catalina.sh", "run"]
